@@ -68,34 +68,72 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
 
 def main():
+    # Ensure we're running from the folder that contains server.py (works after zip extract on any device)
     if not os.path.isdir(WEB_DIR):
         print(f"Error: web directory not found: {WEB_DIR}")
         sys.exit(1)
     index_path = os.path.join(WEB_DIR, "index.html")
     if not os.path.isfile(index_path):
         print(f"Error: index.html not found in {WEB_DIR}")
+        print("Make sure you extracted the full project (e.g. CGVProject folder with web/ inside it).")
         sys.exit(1)
+    # Create leaderboard.txt if missing (e.g. after fresh extract on another device)
+    if not os.path.isfile(LEADERBOARD_FILE):
+        try:
+            with open(LEADERBOARD_FILE, "w", encoding="utf-8") as f:
+                f.write("{}")
+            print(f"Created {LEADERBOARD_FILE}")
+        except Exception as e:
+            print(f"Warning: could not create leaderboard file: {e}")
+    for name in ("app.js", "styles.css"):
+        if not os.path.isfile(os.path.join(WEB_DIR, name)):
+            print(f"Warning: {name} not found in {WEB_DIR}. Game may not work. Re-extract the full zip.")
     os.chdir(WEB_DIR)
     handler = partial(Handler, directory=WEB_DIR)
+    # 127.0.0.1 = only this machine. Use --network to allow other devices on your LAN.
+    host = "127.0.0.1"
+    if len(sys.argv) > 1 and sys.argv[1] == "--network":
+        host = "0.0.0.0"
+        sys.argv = [sys.argv[0]] + sys.argv[2:]
     port = 8000
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])
         except Exception:
             pass
-    host = "127.0.0.1"
     try:
         server = ThreadingHTTPServer((host, port), handler)
-    except OSError:
-        port = 8765
-        server = ThreadingHTTPServer((host, port), handler)
+    except OSError as e:
+        if port == 8000:
+            port = 8765
+            try:
+                server = ThreadingHTTPServer((host, port), handler)
+                print(f"Port 8000 was in use. Using port {port} instead. Open http://127.0.0.1:{port}/")
+            except OSError:
+                print(f"Error: could not start server. Ports 8000 and 8765 may be in use or blocked.\n{e}")
+                sys.exit(1)
+        else:
+            print(f"Error: could not start server on port {port}.\n{e}")
+            sys.exit(1)
     try:
         url = f"http://127.0.0.1:{port}/"
+        print(f"Working folder: {WEB_DIR}")
         print(f"Serving on {url}")
-        print("Open that URL in your browser. If it fails, allow Python in Windows Firewall.")
+        if host == "0.0.0.0":
+            print("Other devices: http://<this-computer-IP>:{}/".format(port))
+        print("Open the URL above in your browser. Press Ctrl+C to stop.")
         server.serve_forever()
     finally:
         server.server_close()
 
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nStopped.")
+    except Exception as e:
+        print("Error:", e)
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

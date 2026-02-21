@@ -10,7 +10,7 @@ h1{margin:0 0 4px 0;font-size:22px}
 .controls input{flex:1;padding:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#e2e8f0}
 .controls button,.actions button{padding:8px 12px;border-radius:6px;border:1px solid #334155;background:#1f2937;color:#e2e8f0;cursor:pointer}
 .controls button:hover,.actions button:hover{background:#334155}
-#board{background:#0b1220;border:1px solid #334155;border-radius:6px}
+#board{background:#0b1220;border:1px solid #334155;border-radius:6px;width:300px;height:300px}
 #status{min-height:22px}
 .actions{display:flex;gap:8px}
 #leaderboard{border:1px solid #334155;border-radius:6px;padding:8px;min-height:120px;background:#0f172a}

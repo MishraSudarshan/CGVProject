@@ -60,7 +60,18 @@ The project is intended for **academic use**, learning purposes, and basic gamep
    python web/server.py
    ```
 
-3. Open in your browser: **http://localhost:8000/**
+3. Open in your browser the URL shown in the terminal (e.g. **http://127.0.0.1:8000/**). If the terminal says a different port (e.g. 8765), use that.
+
+### Running from a zip on another device
+
+1. Extract the **entire** zip so you have the project folder (e.g. `CGVProject`) with a **web** folder inside it.
+2. On the other device you need **Python 3** installed. Open a terminal in the project folder and run:
+   ```bash
+   python web/server.py
+   ```
+   (Or run `python` with the full path to `server.py`; it will find the files automatically.)
+3. Use the **exact URL** printed in the terminal (e.g. `http://127.0.0.1:8000/`). If you see "Port 8000 was in use. Using port 8765", open `http://127.0.0.1:8765/` instead.
+4. If the game does not load, check the terminal for errors or warnings (e.g. missing `app.js` or `styles.css` — then re-zip including the whole **web** folder).
 
 ---
 
