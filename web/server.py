@@ -1,11 +1,14 @@
 import json
 import os
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import sys
 from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-LEADERBOARD_FILE = os.path.join(BASE_DIR, "leaderboard.txt")
+# Resolve paths from this script's location (works no matter how server.py is run)
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(_SCRIPT_DIR)
+WEB_DIR = _SCRIPT_DIR
+LEADERBOARD_FILE = os.path.join(WEB_DIR, "leaderboard.txt")
 
 class Handler(SimpleHTTPRequestHandler):
     def _send_json(self, data, code=200):
@@ -65,22 +68,31 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
 
 def main():
-    web_dir = os.path.join(BASE_DIR, "web")
-    os.chdir(web_dir)
-    handler = partial(Handler, directory=web_dir)
+    if not os.path.isdir(WEB_DIR):
+        print(f"Error: web directory not found: {WEB_DIR}")
+        sys.exit(1)
+    index_path = os.path.join(WEB_DIR, "index.html")
+    if not os.path.isfile(index_path):
+        print(f"Error: index.html not found in {WEB_DIR}")
+        sys.exit(1)
+    os.chdir(WEB_DIR)
+    handler = partial(Handler, directory=WEB_DIR)
     port = 8000
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])
         except Exception:
             pass
+    host = "127.0.0.1"
     try:
-        server = ThreadingHTTPServer(("0.0.0.0", port), handler)
+        server = ThreadingHTTPServer((host, port), handler)
     except OSError:
         port = 8765
-        server = ThreadingHTTPServer(("0.0.0.0", port), handler)
+        server = ThreadingHTTPServer((host, port), handler)
     try:
-        print(f"Serving on http://localhost:{port}/")
+        url = f"http://127.0.0.1:{port}/"
+        print(f"Serving on {url}")
+        print("Open that URL in your browser. If it fails, allow Python in Windows Firewall.")
         server.serve_forever()
     finally:
         server.server_close()
