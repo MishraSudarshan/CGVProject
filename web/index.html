@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noughts and Crosses</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>Noughts and Crosses</h1>
+  <div class="layout">
+    <div class="left">
+      <div class="controls">
+        <input id="playerName" type="text" placeholder="Enter your name">
+        <button id="startBtn">Start Game</button>
+      </div>
+      <canvas id="board" width="300" height="300"></canvas>
+      <div id="status"></div>
+      <div class="actions">
+        <button id="saveBtn">Save Score</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+    <aside class="right">
+      <h2>Leaderboard</h2>
+      <div id="leaderboard"></div>
+    </aside>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

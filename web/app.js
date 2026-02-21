@@ -1,0 +1,244 @@
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+const statusEl = document.getElementById("status");
+const nameInput = document.getElementById("playerName");
+const startBtn = document.getElementById("startBtn");
+const saveBtn = document.getElementById("saveBtn");
+const resetBtn = document.getElementById("resetBtn");
+const leaderboardEl = document.getElementById("leaderboard");
+
+let board = [
+  [" ", " ", " "],
+  [" ", " ", " "],
+  [" ", " ", " "],
+];
+let gameActive = false;
+let playerName = "";
+let lastScore = null;
+
+function draw() {
+  ctx.clearRect(0, 0, 300, 300);
+  ctx.strokeStyle = "#94a3b8";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(100, 0);
+  ctx.lineTo(100, 300);
+  ctx.moveTo(200, 0);
+  ctx.lineTo(200, 300);
+  ctx.moveTo(0, 100);
+  ctx.lineTo(300, 100);
+  ctx.moveTo(0, 200);
+  ctx.lineTo(300, 200);
+  ctx.stroke();
+
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      const x = j * 100 + 50;
+      const y = i * 100 + 50;
+      const mark = board[i][j];
+      if (mark === "X") {
+        ctx.strokeStyle = "#22d3ee";
+        ctx.beginPath();
+        ctx.moveTo(x - 25, y - 25);
+        ctx.lineTo(x + 25, y + 25);
+        ctx.moveTo(x + 25, y - 25);
+        ctx.lineTo(x - 25, y + 25);
+        ctx.stroke();
+      } else if (mark === "O") {
+        ctx.strokeStyle = "#f472b6";
+        ctx.beginPath();
+        ctx.arc(x, y, 28, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function reset() {
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      board[i][j] = " ";
+    }
+  }
+  gameActive = false;
+  statusEl.textContent = "";
+  draw();
+}
+
+function startGame() {
+  playerName = nameInput.value.trim();
+  if (!playerName) {
+    statusEl.textContent = "Enter your name";
+    return;
+  }
+  reset();
+  gameActive = true;
+  statusEl.textContent = "You are X and you go first";
+}
+
+function cellFromEvent(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const row = Math.floor(y / 100);
+  const col = Math.floor(x / 100);
+  return { row, col };
+}
+
+function checkWin(mark) {
+  for (let i = 0; i < 3; i++) {
+    if (board[i][0] === mark && board[i][1] === mark && board[i][2] === mark) return true;
+  }
+  for (let j = 0; j < 3; j++) {
+    if (board[0][j] === mark && board[1][j] === mark && board[2][j] === mark) return true;
+  }
+  if (board[0][0] === mark && board[1][1] === mark && board[2][2] === mark) return true;
+  if (board[0][2] === mark && board[1][1] === mark && board[2][0] === mark) return true;
+  return false;
+}
+
+function isDraw() {
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (board[i][j] === " ") return false;
+    }
+  }
+  return true;
+}
+
+function chooseComputerMove() {
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (board[i][j] === " ") {
+        board[i][j] = "O";
+        if (checkWin("O")) {
+          board[i][j] = " ";
+          return { i, j };
+        }
+        board[i][j] = " ";
+      }
+    }
+  }
+  const empty = [];
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (board[i][j] === " ") empty.push([i, j]);
+    }
+  }
+  if (!empty.length) return { i: 0, j: 0 };
+  const pick = empty[Math.floor(Math.random() * empty.length)];
+  return { i: pick[0], j: pick[1] };
+}
+
+function playerMove(e) {
+  if (!gameActive) return;
+  const { row, col } = cellFromEvent(e);
+  if (row < 0 || row > 2 || col < 0 || col > 2) return;
+  if (board[row][col] !== " ") return;
+  board[row][col] = "X";
+  draw();
+  if (checkWin("X")) {
+    statusEl.textContent = "You win";
+    gameActive = false;
+    lastScore = 1;
+    return;
+  }
+  if (isDraw()) {
+    statusEl.textContent = "Draw";
+    gameActive = false;
+    lastScore = 0;
+    return;
+  }
+  statusEl.textContent = "Computer move";
+  const m = chooseComputerMove();
+  board[m.i][m.j] = "O";
+  draw();
+  if (checkWin("O")) {
+    statusEl.textContent = "Computer wins";
+    gameActive = false;
+    lastScore = -1;
+    return;
+  }
+  if (isDraw()) {
+    statusEl.textContent = "Draw";
+    gameActive = false;
+    lastScore = 0;
+  }
+}
+
+function getData() {
+  const key = "leaderboard";
+  try {
+    return JSON.parse(localStorage.getItem(key) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function setData(obj) {
+  localStorage.setItem("leaderboard", JSON.stringify(obj));
+}
+
+function renderLeaderboard() {
+  const data = getData();
+  const entries = Object.entries(data)
+    .sort((a, b) => Number(b[1] || 0) - Number(a[1] || 0))
+    .slice(0, 10);
+  if (!entries.length) {
+    leaderboardEl.textContent = "No scores";
+    return;
+  }
+  leaderboardEl.textContent = "";
+  const ul = document.createElement("ul");
+  entries.forEach(([n, s], idx) => {
+    const li = document.createElement("li");
+    li.textContent = (idx + 1) + ". " + n + ": " + s;
+    ul.appendChild(li);
+  });
+  leaderboardEl.appendChild(ul);
+}
+
+async function fetchOld() {
+  try {
+    const r = await fetch("/api/leaderboard");
+    if (r.ok) {
+      const data = await r.json();
+      setData(data);
+      renderLeaderboard();
+    }
+  } catch (e) {}
+}
+
+async function saveScore() {
+  if (lastScore === null) {
+    statusEl.textContent = "Play first";
+    return;
+  }
+  if (!playerName) {
+    statusEl.textContent = "Enter your name";
+    return;
+  }
+  const data = getData();
+  const prev = Number(data[playerName] || 0);
+  data[playerName] = prev + Number(lastScore);
+  setData(data);
+  renderLeaderboard();
+  statusEl.textContent = "Score saved";
+  try {
+    await fetch("/api/leaderboard", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    await fetchOld();
+  } catch (e) {}
+}
+
+canvas.addEventListener("click", playerMove);
+startBtn.addEventListener("click", startGame);
+saveBtn.addEventListener("click", saveScore);
+resetBtn.addEventListener("click", reset);
+
+draw();
+fetchOld();
+renderLeaderboard();
